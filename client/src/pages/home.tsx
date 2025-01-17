@@ -6,7 +6,7 @@ import { GradeSelector } from "@/components/quiz/GradeSelector";
 import { OperationSelector } from "@/components/quiz/OperationSelector";
 import { Grade, Operation } from "@/types/quiz";
 import { motion } from "framer-motion";
-import { Users, BarChart } from "lucide-react";
+import { Users, BarChart, Trophy } from "lucide-react";
 
 export default function Home() {
   const [, setLocation] = useLocation();
@@ -49,7 +49,7 @@ export default function Home() {
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Card>
               <CardContent className="p-8">
                 <h2 className="text-2xl font-semibold mb-6">Play with Friends</h2>
@@ -88,6 +88,28 @@ export default function Home() {
                     >
                       <BarChart className="mr-2 h-5 w-5" />
                       View Analytics
+                    </Button>
+                  </motion.div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-8">
+                <h2 className="text-2xl font-semibold mb-6">Achievements</h2>
+                <div className="text-center">
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Button
+                      size="lg"
+                      onClick={() => setLocation("/achievements")}
+                      className="text-xl px-8 py-6"
+                      variant="outline"
+                    >
+                      <Trophy className="mr-2 h-5 w-5" />
+                      View Achievements
                     </Button>
                   </motion.div>
                 </div>

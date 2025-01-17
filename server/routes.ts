@@ -1,8 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { db } from "@db";
-import { questions, quizResults, gameRooms, gameParticipants } from "@db/schema";
-import { eq, and } from "drizzle-orm";
+import { questions, quizResults, gameRooms, gameParticipants, achievements, userAchievements, users } from "@db/schema";
+import { eq, and, count, sql } from "drizzle-orm";
 import type { Question, Operation, Grade } from "../client/src/types/quiz";
 import { setupWebSocketServer } from "./websocket";
 import { nanoid } from "nanoid";
@@ -156,6 +156,127 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Failed to fetch game room" });
+    }
+  });
+
+  // Achievement system endpoints
+  app.get("/api/achievements", async (_req, res) => {
+    try {
+      const allAchievements = await db.query.achievements.findMany();
+      res.json(allAchievements);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Failed to fetch achievements" });
+    }
+  });
+
+  app.get("/api/users/:userId/achievements", async (req, res) => {
+    try {
+      const userId = Number(req.params.userId);
+      const userAchievementsList = await db.query.userAchievements.findMany({
+        where: eq(userAchievements.userId, userId),
+        with: {
+          achievement: true,
+        },
+      });
+      res.json(userAchievementsList);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Failed to fetch user achievements" });
+    }
+  });
+
+  app.post("/api/users/:userId/achievements/check", async (req, res) => {
+    try {
+      const userId = Number(req.params.userId);
+      const newAchievements: typeof userAchievements.$inferSelect[] = [];
+
+      // Get all achievements and current user achievements
+      const allAchievements = await db.query.achievements.findMany();
+      const currentUserAchievements = await db.query.userAchievements.findMany({
+        where: eq(userAchievements.userId, userId),
+      });
+      const earnedAchievementIds = new Set(
+        currentUserAchievements.map((ua) => ua.achievementId)
+      );
+
+      // Get user stats for checking achievements
+      const userStats = await db.query.quizResults.findMany({
+        where: eq(quizResults.userId, userId),
+      });
+
+      // Check each achievement
+      for (const achievement of allAchievements) {
+        if (earnedAchievementIds.has(achievement.id)) continue;
+
+        let progress = 0;
+        let isEarned = false;
+
+        switch (achievement.type) {
+          case "quiz_score":
+            // Check for perfect scores
+            const perfectScores = userStats.filter(
+              (result) =>
+                result.score === result.questionsAttempted &&
+                (!achievement.operation || result.operation === achievement.operation) &&
+                (!achievement.grade || result.grade === achievement.grade)
+            ).length;
+            progress = perfectScores;
+            isEarned = progress >= achievement.threshold;
+            break;
+
+          case "games_played":
+            // Count total games played
+            progress = userStats.length;
+            isEarned = progress >= achievement.threshold;
+            break;
+
+          case "operation_mastery":
+            if (achievement.operation) {
+              // Calculate average score for specific operation
+              const operationResults = userStats.filter(
+                (result) => result.operation === achievement.operation
+              );
+              const totalScore = operationResults.reduce((sum, result) => sum + result.score, 0);
+              const totalQuestions = operationResults.reduce(
+                (sum, result) => sum + result.questionsAttempted,
+                0
+              );
+              progress = totalQuestions > 0 ? Math.round((totalScore / totalQuestions) * 100) : 0;
+              isEarned = progress >= achievement.threshold;
+            }
+            break;
+        }
+
+        // Update progress or grant achievement
+        if (isEarned) {
+          const [inserted] = await db.insert(userAchievements)
+            .values({
+              userId,
+              achievementId: achievement.id,
+              progress: achievement.threshold,
+            })
+            .returning();
+          newAchievements.push(inserted);
+        } else if (progress > 0) {
+          // Update progress
+          await db.insert(userAchievements)
+            .values({
+              userId,
+              achievementId: achievement.id,
+              progress,
+            })
+            .onConflictDoUpdate({
+              target: [userAchievements.userId, userAchievements.achievementId],
+              set: { progress },
+            });
+        }
+      }
+
+      res.json(newAchievements);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Failed to check achievements" });
     }
   });
 

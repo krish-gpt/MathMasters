@@ -9,6 +9,7 @@ import MultiplayerLobby from "@/pages/multiplayer/lobby";
 import MultiplayerRoom from "@/pages/multiplayer/room";
 import MultiplayerGame from "@/pages/multiplayer/game";
 import Analytics from "@/pages/analytics";
+import Achievements from "@/pages/achievements";
 
 function Router() {
   return (
@@ -19,6 +20,7 @@ function Router() {
       <Route path="/multiplayer/room/:code" component={MultiplayerRoom} />
       <Route path="/multiplayer/game" component={MultiplayerGame} />
       <Route path="/analytics" component={Analytics} />
+      <Route path="/achievements" component={Achievements} />
       <Route component={NotFound} />
     </Switch>
   );
