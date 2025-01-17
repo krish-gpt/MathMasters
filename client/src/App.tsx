@@ -8,6 +8,7 @@ import Quiz from "@/pages/quiz";
 import MultiplayerLobby from "@/pages/multiplayer/lobby";
 import MultiplayerRoom from "@/pages/multiplayer/room";
 import MultiplayerGame from "@/pages/multiplayer/game";
+import Analytics from "@/pages/analytics";
 
 function Router() {
   return (
@@ -17,6 +18,7 @@ function Router() {
       <Route path="/multiplayer" component={MultiplayerLobby} />
       <Route path="/multiplayer/room/:code" component={MultiplayerRoom} />
       <Route path="/multiplayer/game" component={MultiplayerGame} />
+      <Route path="/analytics" component={Analytics} />
       <Route component={NotFound} />
     </Switch>
   );
