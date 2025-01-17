@@ -1,9 +1,11 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { db } from "@db";
-import { questions, quizResults } from "@db/schema";
+import { questions, quizResults, gameRooms, gameParticipants } from "@db/schema";
 import { eq, and } from "drizzle-orm";
 import type { Question, Operation, Grade } from "../client/src/types/quiz";
+import { setupWebSocketServer } from "./websocket";
+import { nanoid } from "nanoid";
 
 // Temporary question generator without OpenAI
 function generateBasicQuestions(operation: Operation, grade: Grade, count: number): Question[] {
@@ -114,6 +116,51 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // New routes for multiplayer
+  app.post("/api/game-rooms", async (req, res) => {
+    try {
+      const { grade, operation } = req.body;
+      const code = nanoid(6).toUpperCase(); // Generate a 6-character room code
+
+      const [room] = await db.insert(gameRooms)
+        .values({
+          code,
+          grade,
+          operation,
+          status: "waiting",
+        })
+        .returning();
+
+      res.json(room);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Failed to create game room" });
+    }
+  });
+
+  app.get("/api/game-rooms/:code", async (req, res) => {
+    try {
+      const room = await db.query.gameRooms.findFirst({
+        where: eq(gameRooms.code, req.params.code),
+        with: {
+          participants: true,
+        },
+      });
+
+      if (!room) {
+        res.status(404).json({ message: "Room not found" });
+        return;
+      }
+
+      res.json(room);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Failed to fetch game room" });
+    }
+  });
+
   const httpServer = createServer(app);
+  setupWebSocketServer(httpServer);
+
   return httpServer;
 }

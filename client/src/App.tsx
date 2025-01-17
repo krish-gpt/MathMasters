@@ -5,12 +5,18 @@ import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Quiz from "@/pages/quiz";
+import MultiplayerLobby from "@/pages/multiplayer/lobby";
+import MultiplayerRoom from "@/pages/multiplayer/room";
+import MultiplayerGame from "@/pages/multiplayer/game";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/quiz" component={Quiz} />
+      <Route path="/multiplayer" component={MultiplayerLobby} />
+      <Route path="/multiplayer/room/:code" component={MultiplayerRoom} />
+      <Route path="/multiplayer/game" component={MultiplayerGame} />
       <Route component={NotFound} />
     </Switch>
   );
