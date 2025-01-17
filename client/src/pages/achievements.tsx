@@ -21,8 +21,8 @@ export default function AchievementsPage() {
 
   if (!achievements || !userAchievements) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-2xl">Loading achievements...</div>
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-xl sm:text-2xl">Loading achievements...</div>
       </div>
     );
   }
@@ -34,22 +34,22 @@ export default function AchievementsPage() {
     return {
       achievement,
       progress: userAchievement?.progress || 0,
-      isEarned: userAchievement?.progress >= achievement.threshold,
+      isEarned: (userAchievement?.progress || 0) >= achievement.threshold,
     };
   });
 
   const earnedCount = achievementProgress.filter((ap) => ap.isEarned).length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-100 to-blue-100 py-12">
+    <div className="min-h-screen bg-gradient-to-b from-purple-100 to-blue-100 py-6 sm:py-12">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-center gap-4 mb-8">
-          <Trophy className="h-8 w-8 text-primary" />
-          <h1 className="text-4xl font-bold text-center">Achievements</h1>
+        <div className="flex items-center justify-center gap-3 sm:gap-4 mb-6 sm:mb-8">
+          <Trophy className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
+          <h1 className="text-3xl sm:text-4xl font-bold text-center">Achievements</h1>
         </div>
 
-        <div className="text-center mb-8">
-          <p className="text-lg">
+        <div className="text-center mb-6 sm:mb-8">
+          <p className="text-base sm:text-lg">
             You've earned <span className="font-bold text-primary">{earnedCount}</span> out of{" "}
             <span className="font-bold">{achievements.length}</span> achievements!
           </p>
@@ -58,7 +58,7 @@ export default function AchievementsPage() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+          className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
         >
           {achievementProgress.map((ap) => (
             <AchievementCard
