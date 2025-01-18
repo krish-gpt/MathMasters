@@ -1,7 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Trophy } from "lucide-react";
-import { motion } from "framer-motion";
 import type { AchievementProgress } from "@/types/achievement";
 
 interface AchievementCardProps {
@@ -16,45 +15,58 @@ export function AchievementCard({ achievement, isNew }: AchievementCardProps) {
   );
 
   return (
-    <motion.div
-      initial={isNew ? { scale: 0.8, opacity: 0 } : undefined}
-      animate={isNew ? { scale: 1, opacity: 1 } : undefined}
-      transition={{ duration: 0.5 }}
-      whileHover={{ scale: 1.02 }}
-      className="h-full"
+    <Card 
+      className={`h-full transition-all duration-200 hover:shadow-lg ${
+        achievement.isEarned ? "border-2 border-primary" : ""
+      }`}
     >
-      <Card className={`h-full ${achievement.isEarned ? "border-2 border-primary" : ""}`}>
-        <CardContent className="p-4 sm:p-6">
-          <div className="flex items-start gap-3 sm:gap-4">
-            <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-              {achievement.isEarned ? (
-                <Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-              ) : (
-                <Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground" />
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-bold text-base sm:text-lg truncate">
-                {achievement.achievement.name}
-              </h3>
-              <p className="text-sm text-muted-foreground mb-2 line-clamp-2 sm:line-clamp-none">
-                {achievement.achievement.description}
-              </p>
-              {!achievement.isEarned && (
-                <div className="space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span>Progress</span>
-                    <span className="font-mono">
-                      {achievement.progress} / {achievement.achievement.threshold}
-                    </span>
-                  </div>
-                  <Progress value={progressPercentage} className="h-2" />
-                </div>
-              )}
+      <CardContent className="p-3 sm:p-4 md:p-5 h-full">
+        <div className="flex items-start gap-3 h-full">
+          <div className="flex-shrink-0">
+            <div className={`
+              w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 
+              rounded-full 
+              bg-primary/10 
+              flex items-center justify-center
+              transition-all duration-200
+              ${achievement.isEarned ? 'scale-110' : ''}
+            `}>
+              <Trophy 
+                className={`
+                  w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6
+                  ${achievement.isEarned ? 'text-primary' : 'text-muted-foreground'}
+                `}
+              />
             </div>
           </div>
-        </CardContent>
-      </Card>
-    </motion.div>
+
+          <div className="flex-1 min-w-0 space-y-2">
+            <div>
+              <h3 className="font-bold text-sm sm:text-base md:text-lg truncate">
+                {achievement.achievement.name}
+              </h3>
+              <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 mt-0.5">
+                {achievement.achievement.description}
+              </p>
+            </div>
+
+            {!achievement.isEarned && (
+              <div className="space-y-1.5">
+                <div className="flex justify-between items-center text-xs sm:text-sm">
+                  <span className="text-muted-foreground">Progress</span>
+                  <span className="font-mono">
+                    {achievement.progress} / {achievement.achievement.threshold}
+                  </span>
+                </div>
+                <Progress 
+                  value={progressPercentage} 
+                  className="h-1.5 sm:h-2"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
