@@ -7,12 +7,16 @@ import { Question, Grade, Operation } from "@/types/quiz";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { fetchQuestions, submitQuizResult } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
+
+const MAX_QUESTIONS = 10;
 
 export default function Quiz() {
   const [, setLocation] = useLocation();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [score, setScore] = useState(0);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
 
   const searchParams = new URLSearchParams(window.location.search);
   const grade = Number(searchParams.get("grade")) as Grade;
@@ -20,37 +24,54 @@ export default function Quiz() {
 
   const { data: questions, isLoading } = useQuery({
     queryKey: ["/api/questions", grade, operation],
-    queryFn: () => 
-      operation && grade ? fetchQuestions({ grade, operation }) : Promise.reject("Invalid parameters"),
-    enabled: !!grade && !!operation
+    queryFn: () =>
+      operation && grade
+        ? fetchQuestions({ grade, operation })
+        : Promise.reject("Invalid parameters"),
+    enabled: !!grade && !!operation,
   });
 
   const submitMutation = useMutation({
     mutationFn: submitQuizResult,
     onSuccess: () => {
       setShowCelebration(true);
-      setTimeout(() => setLocation("/"), 3000);
+      setTimeout(() => {
+        setLocation("/");
+      }, 3000);
     },
   });
 
   const handleAnswer = (correct: boolean) => {
     if (correct) {
-      setScore((prev) => prev + 1);
+      const newScore = score + 1;
+      setScore(newScore);
       setShowCelebration(true);
       setTimeout(() => setShowCelebration(false), 1500);
+
+      // If we've achieved a perfect score before reaching max questions
+      if (newScore === MAX_QUESTIONS) {
+        handleQuizCompletion(newScore);
+        return;
+      }
     }
 
-    if (currentQuestion + 1 < (questions?.length || 0)) {
+    // Check if we should move to next question or end the quiz
+    if (currentQuestion + 1 < Math.min(MAX_QUESTIONS, questions?.length || 0)) {
       setCurrentQuestion((prev) => prev + 1);
     } else {
-      submitMutation.mutate({
-        userId: 1, // TODO: Replace with actual user ID
-        score,
-        questionsAttempted: questions?.length || 0,
-        operation,
-        grade,
-      });
+      handleQuizCompletion(score + (correct ? 1 : 0));
     }
+  };
+
+  const handleQuizCompletion = (finalScore: number) => {
+    setIsCompleted(true);
+    submitMutation.mutate({
+      userId: 1, // TODO: Replace with actual user ID
+      score: finalScore,
+      questionsAttempted: currentQuestion + 1,
+      operation,
+      grade,
+    });
   };
 
   if (!grade || !operation) {
@@ -75,22 +96,38 @@ export default function Quiz() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-100 to-blue-100 py-12">
       <div className="container mx-auto px-4">
-        <ScoreDisplay score={score} total={questions?.length || 0} />
+        <ScoreDisplay score={score} total={Math.min(MAX_QUESTIONS, questions?.length || 0)} />
 
-        <div className="mt-8">
-          {questions && questions[currentQuestion] && (
+        <motion.div
+          className="mt-8"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          {!isCompleted && questions && questions[currentQuestion] && (
             <QuizCard
               question={questions[currentQuestion]}
               onAnswer={handleAnswer}
             />
           )}
-        </div>
+
+          {isCompleted && (
+            <div className="text-center">
+              <motion.h2
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="text-3xl font-bold mb-4"
+              >
+                {score === MAX_QUESTIONS ? "Perfect Score! 🌟" : "Quiz Completed!"}
+              </motion.h2>
+              <p className="text-lg mb-6">
+                You got {score} out of {currentQuestion + 1} questions correct!
+              </p>
+            </div>
+          )}
+        </motion.div>
 
         <div className="mt-8 text-center">
-          <Button
-            variant="outline"
-            onClick={() => setLocation("/")}
-          >
+          <Button variant="outline" onClick={() => setLocation("/")}>
             Back to Home
           </Button>
         </div>
